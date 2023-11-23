@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+#
+kind: Deployment
+metadata:
+  name: minio
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: ajmo2266/demucs-minio:v1
+        env:
+          - name: MINIO_HOST
+            value: "minio:9000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: minio-proj.minio-ns.svc.cluster.local
+  selector:
+    app: minio
+  ports:
+    - protocol: "TCP"
+      port: 9000
+      targetPort: 9000
