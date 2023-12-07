@@ -5,42 +5,44 @@ const recordAudio = () =>
     const audioChunks = [];
 
     mediaRecorder.addEventListener("dataavailable", event => {
+      console.log("New event!!!");
       audioChunks.push(event.data);
+      console.log(event.data.text);
+      console.log(event.data);
+
+
+      fetch(
+        'https://34.120.17.11/separate',
+        {
+          method: 'POST',
+          data: {
+            'recording': btoa(event.data.text)
+          }
+        }
+      ).then(response => {
+        console.log(response);
+      });
+
     });
 
-    const start = () => mediaRecorder.start();
+    const start = () => mediaRecorder.start(1000);
 
-    const stop = () =>
-      new Promise(resolve => {
-        mediaRecorder.addEventListener("stop", () => {
-            audioChunks.forEach((score) => {
-                console.log("Logging chunk: ", audioChunks.size());
-                console.log(score);
-            });
-          const audioBlob = new Blob(audioChunks, { type: "audio/mpeg" });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-          const play = () => audio.play();
-          stream.getTracks().forEach((track) => track.stop());
-          resolve({ audioBlob, audioUrl, play });
-        });
-
-        mediaRecorder.stop();
-      });
+    const stop = () => mediaRecorder.stop();
 
     resolve({ start, stop });
   });
 
 const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
-const handleAction = async () => {
+const handleStart = async () => {
   const recorder = await recordAudio();
-  const actionButton = document.getElementById("action");
-  actionButton.disabled = true;
+  const start = document.getElementById("start");
+  const stop = document.getElementById("stop");
+  start.disabled = true;
   recorder.start();
-  await sleep(3000);
-  const audio = await recorder.stop();
-  audio.play();
-  await sleep(3000);
-  actionButton.disabled = false;
+  stop.addEventListener("click", stop => {
+    recorder.stop();
+    start.disabled=false;
+  });
 };
+
