@@ -10,7 +10,7 @@ import io
 app = Flask(__name__)
 REDIS_SERVICE_HOST = os.environ.get('REDIS_SERVICE_HOST') or 'localhost'
 redis_db = redis.StrictRedis(host=REDIS_SERVICE_HOST, port=6379, db=0)
-redis_queue = "toWorker"
+redis_queue = "toDiarization"
 
 
 from minio import Minio
@@ -27,7 +27,10 @@ client = Minio(minioAddr,
                access_key=minioUser,
                secret_key=minioPasswd)
 
-bucketname='demucs'
+bucketname='input'
+emotion_bucketname = 'emotion'
+output_bucketname = 'output'
+
 
 @app.route('/apiv1/separate', methods=['POST'])
 def separate():

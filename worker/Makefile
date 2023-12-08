@@ -1,4 +1,4 @@
-VERSION=v1
+VERSION=v5
 DOCKERUSER=ajmo2266
 
 build:

@@ -20,6 +20,7 @@ WORKDIR /lib/TIM-Net_SER/Code
 RUN python3 -m pip install cvxopt==1.3.0 h5py==3.1.0 keras==2.7.0 librosa==0.9.2 matplotlib==3.6.1 numba==0.56.3 numpy==1.19.5 openpyxl==3.0.10 pandas==1.3.0 prettytable==3.4.1 scikit-learn==1.1.2 scipy==1.9.2 spafe==0.2.0 speechpy==2.4 tensorflow==2.7.0 tqdm==4.63.1
 # RUN python3 -m pip install -r requirement.txt
 RUN python3 -m pip install protobuf==3.20
+# RUN python3 -m pip install google-cloud google-api-python-client google-cloud-vision google-cloud-speech
 
 # # Install dependencies
 # RUN python3 -m pip install -e . --no-cache-dir
@@ -34,8 +35,13 @@ RUN python3 -m pip install protobuf==3.20
 COPY ./10-fold_weights_best_1.hdf5 /lib/TIM-Net_SER/Code/
 COPY ./Model.py /lib/TIM-Net_SER/Code/
 COPY ./inference.py /lib/TIM-Net_SER/Code/
+# COPY ./speech_diarization.py /lib/TIM-Net_SER/Code/
+# COPY ./commercial1.wav /lib/TIM-Net_SER/Code/
+# COPY ./commercial2.wav /lib/TIM-Net_SER/Code/
+# COPY ./service-credentials.json /lib/TIM-Net_SER/Code/
 
 COPY ./worker.py /
+# COPY ./worker_diarization.py /
 
 WORKDIR /
 CMD  python3 /worker.py

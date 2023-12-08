@@ -35,7 +35,7 @@ def mkReq(reqmethod, endpoint, data, verbose=True):
             f"response code is {response.status_code}, raw response is {response.text}")
         return response.text
 
-
+# files = ["./worker/commercial1"]
 for mp3 in glob.glob("data/*wav"):
     print(f"Separate data/{mp3}")
     mkReq(requests.post, "apiv1/separate",

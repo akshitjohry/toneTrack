@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: minio
-        image: ajmo2266/demucs-minio:v1
+        image: ajmo2266/demucs-minio:v3
         env:
           - name: MINIO_HOST
             value: "minio:9000"

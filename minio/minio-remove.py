@@ -12,34 +12,37 @@ client = Minio(minioHost,
                access_key=minioUser,
                secret_key=minioPasswd)
 
-bucketname='demucs'
+# bucketname='demucs'
 files_to_add=["minio-config.yaml"]
 
 while True:
-    if not client.bucket_exists(bucketname):
-        print(f"Create bucket {bucketname}")
-        client.make_bucket(bucketname)
+    bucketnames = ['input', 'emotion', 'output']
+    for bucket in bucketnames:    
+        if not client.bucket_exists(bucket):
+            print(f"Create bucket {bucket}")
+            client.make_bucket(bucket)
 
     buckets = client.list_buckets()
-
+    print(buckets)
     for bucket in buckets:
         print(f"Bucket {bucket.name}, created {bucket.creation_date}")
-        
-    print(f"Objects in {bucketname} are originally:")
-    for thing in client.list_objects(bucketname, recursive=True):
-        print(thing.object_name)
-        
-    try:
-        for filename in files_to_add:
-            print(f"Add file {filename} as object {filename}")
-            client.fput_object(bucketname, filename, f"./{filename}")
-    except ResponseError as err:
-        print("Error when adding files the first time")
-        print(err)
+            
+    #     print(f"Objects in {bucket} are originally:")
+    #     for thing in client.list_objects(bucket, recursive=True):
+    #         print(thing.object_name)
+            
+    #     try:
+    #         for filename in files_to_add:
+    #             print(f"Add file {filename} as object {filename}")
+    #             client.fput_object(bucket, filename, f"./{filename}")
+    #     except ResponseError as err:
+    #         print("Error when adding files the first time")
+    #         print(err)
 
-    print(f"Objects in {bucketname} are now:")
-    for thing in client.list_objects(bucketname, recursive=True):
-        print(thing.object_name)
+        print(f"Objects in {bucket.name} are now:")
+        for thing in client.list_objects(bucket.name, recursive=True):
+            print(thing.object_name)
+            # client.remove_object(bucket.name, thing.object_name)
 
     sys.stdout.flush()
     time.sleep(10)
