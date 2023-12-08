@@ -1,3 +1,8 @@
+function bytesToBase64(bytes) {
+  const binString = String.fromCodePoint(...bytes);
+  return btoa(binString);
+}
+
 const recordAudio = () =>
   new Promise(async resolve => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -8,16 +13,14 @@ const recordAudio = () =>
       console.log("New event!!!");
       audioChunks.push(event.data);
       console.log(event.data.text);
+      console.log(event.data.type);
       console.log(event.data);
 
-
       fetch(
-        'https://34.120.17.11/separate',
+        'https://34.68.246.249/apiv1/separate',
         {
           method: 'POST',
-          data: {
-            'recording': btoa(event.data.text)
-          }
+          data: {'mp3':'1234567'}
         }
       ).then(response => {
         console.log(response);
