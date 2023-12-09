@@ -16,11 +16,17 @@ const recordAudio = () =>
       console.log(event.data.type);
       console.log(event.data);
 
+      ans = JSON.stringify({mp3:btoa(event.data.text), callback:{}})
+      console.log(ans)
+
       fetch(
-        'https://34.68.246.249/apiv1/separate',
+        'http://34.134.253.130/upload',
         {
           method: 'POST',
-          data: {'mp3':'1234567'}
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: ans
         }
       ).then(response => {
         console.log(response);
