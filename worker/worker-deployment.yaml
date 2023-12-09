@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: emorecong
-        image: ajmo2266/emorecong:v5
+        image: ajmo2266/emorecong:v7
         resources:
           requests:
             cpu: 100m

@@ -6,7 +6,7 @@ import os
 import argparse
 import google.oauth2.service_account as service_account
 
-
+TIME_FACTOR = 10
 
 
 
@@ -14,8 +14,8 @@ def create_microsecond_chunks(data, rate, output_prefix, start_times, end_times,
     
 
     for i, (start_time, end_time) in enumerate(zip(start_times, end_times)):
-        start_index = int(start_time * rate/1000000)
-        end_index = int(end_time * rate/1000000)
+        start_index = int(start_time * rate/TIME_FACTOR)
+        end_index = int(end_time * rate/TIME_FACTOR)
         print(start_index, end_index)
         chunk_data = data[start_index:end_index]
         # output_file = f"{output_prefix}_chunk_{i+1}.wav"
@@ -72,9 +72,11 @@ def process_file(speech_data):
                 "words": []
             }
             
-        start_time = word_info.start_time.seconds*1000000+word_info.start_time.microseconds
-        end_time = word_info.end_time.seconds*1000000+word_info.end_time.microseconds
-        
+        # start_time = word_info.start_time.seconds*1000000+word_info.start_time.microseconds
+        # end_time = word_info.end_time.seconds*1000000+word_info.end_time.microseconds
+        start_time = word_info.start_time.seconds*TIME_FACTOR
+        end_time = word_info.end_time.seconds*TIME_FACTOR
+
         speaker_info[speakers[speaker_tag]]["words"].append(word_info.word)  
 
         if speakers[speaker_tag] == previous_speaker:
@@ -118,25 +120,35 @@ if __name__ == '__main__':
         with open(speech_file, "rb") as audio_file:
             content = audio_file.read()
         speaker_info = process_file(content)
+        rate, data = wavfile.read(speech_file)
+        print(len(data)/rate)
+        #Considering 1/10 of a second
+        file_duration = int((len(data)/rate)*TIME_FACTOR)
+        initial_emotions = [0 for i in range(file_duration)]
+        for s in speaker_info:
+            speaker_info[s]["emotion"] = initial_emotions
         out_filename = speech_file.split('.')[0]+'.json'
         with open(out_filename, "w") as outfile:
             json.dump(speaker_info, outfile)
-
         
     else:
         # Load previous speaker info
         prev_rate, prev_data = wavfile.read(prev_speech_file)
         prev_data = prev_data[int(len(prev_data)*0.25):]
-        prev_time = (len(prev_data)/prev_rate)*1000000
+        prev_time = (len(prev_data)/prev_rate)*TIME_FACTOR
         print("Previous time", prev_time)
         f = open(prev_info)
         prev_speaker_info = json.load(f)
 
         #Load current file
         rate, data = wavfile.read(speech_file)
+        #Considering 1/10 of a second
+        file_duration = int((len(data)/rate)*TIME_FACTOR)
+        initial_emotions = [0 for i in range(file_duration)]
+        
+        
         data = np.concatenate((prev_data, data))
         print(len(data)/rate)
-        
         #Generate new wav file with prev and curr data
         wavfile.write("temp.wav", rate, data)
         with open("temp.wav", "rb") as audio_file:
@@ -177,6 +189,7 @@ if __name__ == '__main__':
                     speaker_info[s]["start_times"].append(start)
                     speaker_info[s]["end_times"].append(end_times[t]-prev_time)
                     speaker_info[s]["words"].append(words[t])
+            speaker_info[s]["emotion"] = initial_emotions
         out_filename = speech_file.split('.')[0]+'.json'
         with open(out_filename, "w") as outfile:
             json.dump(speaker_info, outfile)

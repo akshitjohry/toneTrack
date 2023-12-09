@@ -48,11 +48,7 @@ def process_message(message):
         with open(f'{filename}.wav', 'wb') as local_file:
             local_file.write(object_content)
         os.system(f"python3 inference.py --audio_path /lib/TIM-Net_SER/Code/{filename}.wav ")
-        # for track in ["bass", "drums", "vocals", "other"]:
-        #     track_path = f"/data/output/htdemucs/{filename}/{track}.mp3"
-        #     with open(track_path, "rb") as track_file:
-        #         track_data = track_file.read()
-        # client.put_object(bucketname, f'{filename}_{track}.mp3', io.BytesIO(track_data), len(track_data),content_type='audio/mpeg')
+        
         out_filename = f"{filename.split('.')[0]}.json"
         with open(out_filename, "r") as output:
             data = json.load(output)
@@ -61,26 +57,42 @@ def process_message(message):
         client.put_object(output_bucketname, f'{filename}_output.json', io.BytesIO(json_data), len(json_data), content_type='application/json')
         
         #TODO: Check the filenames
+        # temp = filename.split('start_')
+        # start_time = int(temp[1].split('_end_')[0])
+        # end_time = int(temp[1].split('_end_')[1].split('_speaker')[0])
+        # speaker_id = int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0])
+        # vis_file = temp[0]+"vis.json"
+        # print("Visualization file", vis_file)
+        # response = client.get_object(output_bucketname, vis_file)
+        # object_content = response.read().decode('utf-8')
+        # json_data = json.loads(object_content)
+        # print(json_data)
+        # vis_data = {
+        #     "start":start_time,
+        #     "end":end_time,
+        #     "speaker":speaker_id,
+        #     "emotion":data['emotion'],
+        # }
+        # json_data['data'].append(vis_data)
+        # print(json_data)        
+        # json_data = json.dumps(json_data).encode('utf-8')
+        # client.put_object(output_bucketname, vis_file, io.BytesIO(json_data), len(json_data), content_type='application/json')
         temp = filename.split('start_')
         start_time = int(temp[1].split('_end_')[0])
         end_time = int(temp[1].split('_end_')[1].split('_speaker')[0])
-        speaker_id = int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0])
-        vis_file = temp[0]+"vis.json"
-        print("Visualization file", vis_file)
+        speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0]))
+        vis_file = temp[0]+"diarization.json"
+        print("Visualization file", vis_file, start_time, end_time)
         response = client.get_object(output_bucketname, vis_file)
         object_content = response.read().decode('utf-8')
         json_data = json.loads(object_content)
         print(json_data)
-        vis_data = {
-            "start":start_time,
-            "end":end_time,
-            "speaker":speaker_id,
-            "emotion":data['emotion'],
-        }
-        json_data['data'].append(vis_data)
+        json_data[speaker_id]['emotion'][start_time:end_time] = [data['pred'] for i in range(start_time, end_time)]
         print(json_data)        
         json_data = json.dumps(json_data).encode('utf-8')
         client.put_object(output_bucketname, vis_file, io.BytesIO(json_data), len(json_data), content_type='application/json')
+
+
         # client.remove_object(emotion_bucketname, f'{filename}.wav')
         # print("Check5")
     except Exception as e:

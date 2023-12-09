@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: diarization
-        image: ajmo2266/diarization:v6
+        image: ajmo2266/diarization:v8
         resources:
           requests:
             cpu: 100m
