@@ -30,8 +30,9 @@ client = Minio(minioAddr,
 bucketname='input'
 emotion_bucketname = 'emotion'
 output_bucketname = 'output'
+vis_bucketname = 'visualization'
 
-
+redis_vis_queue = "toVisualize"
 
 def process_message(message):
     try:
@@ -80,9 +81,16 @@ def process_message(message):
         temp = filename.split('start_')
         start_time = int(temp[1].split('_end_')[0])
         end_time = int(temp[1].split('_end_')[1].split('_speaker')[0])
-        speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0]))
+        
+        is_last = False
+        if "last" in filename:
+            is_last = True
+            speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('_')[0]))
+        else:
+            speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0]))
         vis_file = temp[0]+"diarization.json"
         print("Visualization file", vis_file, start_time, end_time)
+        
         response = client.get_object(output_bucketname, vis_file)
         object_content = response.read().decode('utf-8')
         json_data = json.loads(object_content)
@@ -91,7 +99,14 @@ def process_message(message):
         print(json_data)        
         json_data = json.dumps(json_data).encode('utf-8')
         client.put_object(output_bucketname, vis_file, io.BytesIO(json_data), len(json_data), content_type='application/json')
-
+        if is_last:
+            response_data = {
+                "hash": vis_file, 
+                "reason": "Song enqueued for separation"
+            }
+            message_json = json.dumps(response_data)
+            redis_db.lpush(redis_vis_queue, message_json)
+            client.put_object(vis_bucketname, vis_file, io.BytesIO(json_data), len(json_data), content_type='application/json')
 
         # client.remove_object(emotion_bucketname, f'{filename}.wav')
         # print("Check5")

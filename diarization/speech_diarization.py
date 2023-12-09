@@ -5,13 +5,15 @@ import numpy as np
 import os
 import argparse
 import google.oauth2.service_account as service_account
+from scipy.signal import resample
 
-TIME_FACTOR = 10
+TIME_FACTOR = 1
 
 
 
-def create_microsecond_chunks(data, rate, output_prefix, start_times, end_times, speaker_prefix):
+def create_microsecond_chunks(data, rate, output_prefix, start_times, end_times, speaker_prefix, is_last = False):
     
+    length = len(end_times)
 
     for i, (start_time, end_time) in enumerate(zip(start_times, end_times)):
         start_index = int(start_time * rate/TIME_FACTOR)
@@ -19,9 +21,12 @@ def create_microsecond_chunks(data, rate, output_prefix, start_times, end_times,
         print(start_index, end_index)
         chunk_data = data[start_index:end_index]
         # output_file = f"{output_prefix}_chunk_{i+1}.wav"
-        output_file = f"{output_prefix}_start_{int(start_time)}_end_{int(end_time)}_speaker{int(speaker_prefix)}.wav"
+        if is_last and i == length-1:
+            output_file = f"{output_prefix}_start_{int(start_time)}_end_{int(end_time)}_speaker{int(speaker_prefix)}_last.wav"
+        else:
+            output_file = f"{output_prefix}_start_{int(start_time)}_end_{int(end_time)}_speaker{int(speaker_prefix)}.wav"
         wavfile.write(output_file, rate, chunk_data)
-        print(f"Chunk {i+1} created: {output_file}")
+        print(f"Chunk {i+1} created: {output_file} is_last :{is_last}")
 
 def process_file(speech_data):
     
@@ -117,8 +122,17 @@ if __name__ == '__main__':
 
 
     if not os.path.exists(prev_speech_file):
-        with open(speech_file, "rb") as audio_file:
+        rate, data = wavfile.read(speech_file)
+        if rate != 8000:
+            resampling_factor = rate / 8000
+            data = resample(data, int(len(data) / resampling_factor)).astype(np.int16)
+            rate = 8000
+        wavfile.write("temp.wav", rate, data)
+        with open("temp.wav", "rb") as audio_file:
             content = audio_file.read()
+        
+        # with open(speech_file, "rb") as audio_file:
+        #     content = audio_file.read()
         speaker_info = process_file(content)
         rate, data = wavfile.read(speech_file)
         print(len(data)/rate)
@@ -130,10 +144,16 @@ if __name__ == '__main__':
         out_filename = speech_file.split('.')[0]+'.json'
         with open(out_filename, "w") as outfile:
             json.dump(speaker_info, outfile)
+        os.remove("temp.wav")
         
     else:
         # Load previous speaker info
         prev_rate, prev_data = wavfile.read(prev_speech_file)
+        if prev_rate != 8000:
+            resampling_factor = prev_rate / 8000
+            prev_data = resample(prev_data, int(len(prev_data) / resampling_factor)).astype(np.int16)
+            prev_rate = 8000
+
         prev_data = prev_data[int(len(prev_data)*0.25):]
         prev_time = (len(prev_data)/prev_rate)*TIME_FACTOR
         print("Previous time", prev_time)
@@ -142,6 +162,11 @@ if __name__ == '__main__':
 
         #Load current file
         rate, data = wavfile.read(speech_file)
+        if rate != 8000:
+            resampling_factor = rate / 8000
+            data = resample(data, int(len(data) / resampling_factor)).astype(np.int16)
+            rate = 8000
+            
         #Considering 1/10 of a second
         file_duration = int((len(data)/rate)*TIME_FACTOR)
         initial_emotions = [0 for i in range(file_duration)]
@@ -189,6 +214,9 @@ if __name__ == '__main__':
                     speaker_info[s]["start_times"].append(start)
                     speaker_info[s]["end_times"].append(end_times[t]-prev_time)
                     speaker_info[s]["words"].append(words[t])
+            if lastEndTime < speaker_info[s]["end_times"][-1]:
+                lastEndTime = speaker_info[s]["end_times"][-1]
+                lastSpeaker = s
             speaker_info[s]["emotion"] = initial_emotions
         out_filename = speech_file.split('.')[0]+'.json'
         with open(out_filename, "w") as outfile:
@@ -196,15 +224,25 @@ if __name__ == '__main__':
         
         os.remove("temp.wav")
 
+    lastSpeaker = -1
+    lastEndTime =-1
+    for s in speaker_info:
+        if lastEndTime < speaker_info[s]["end_times"][-1]:
+            lastEndTime = speaker_info[s]["end_times"][-1]
+            lastSpeaker = s  
+    print("Last Speaker", lastSpeaker)
     # Divide into chunks based on speaker
     rate, data = wavfile.read(speech_file)
     print(len(data), rate)
     for speaker in speaker_info:
+        is_last = False
         start_times = speaker_info[speaker]["start_times"]
         end_times = speaker_info[speaker]["end_times"]
         print(start_times, end_times)
         output_prefix = speech_file.split('.')[0] 
-        create_microsecond_chunks(data, rate, output_prefix, start_times, end_times, int(speaker))
+        if lastSpeaker == speaker:
+            is_last = True
+        create_microsecond_chunks(data, rate, output_prefix, start_times, end_times, int(speaker), is_last)
 
     # Update curr -> prev
     # prev_speaker_info = speaker_info

@@ -16,7 +16,7 @@ client = Minio(minioHost,
 files_to_add=["minio-config.yaml"]
 
 while True:
-    bucketnames = ['input', 'emotion', 'output']
+    bucketnames = ['input', 'emotion', 'output', 'visualization']
     for bucket in bucketnames:    
         if not client.bucket_exists(bucket):
             print(f"Create bucket {bucket}")

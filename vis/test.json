@@ -1,0 +1,16 @@
+{
+    '1': 
+    {
+        'start_times': [0, 16, 25], 
+        'end_times': [1, 19, 27], 
+        'words': ["let's", 'get', 'the', 'black', 'Express', 'Express', 'please', 'thank', 'you', 'bye'], 
+        'emotion': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0]
+    }, 
+    '2': 
+    {
+        'start_times': [1, 21], 
+        'end_times': [16, 24], 
+        'words': ['one', 'okay', 'great', 'would', 'you', 'like', 'the', 'new', 'Chromecast', 'Ultra', 'model', 'or', 'the', 'regular', 'Chromecast', 'regular', 'Chromecast', 'is', 'fine', 'okay', 'sure', 'would', 'you', 'like', 'to', 'ship', 'it', 'regular', 'or', 'terrific', "it's", 'on', 'the', 'way', 'thank', 'you', 'very', 'much'], 
+        'emotion': [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
+    }
+}
