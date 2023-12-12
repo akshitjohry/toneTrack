@@ -3,6 +3,9 @@ function bytesToBase64(bytes) {
   return btoa(binString);
 }
 
+const url = 'http://34.41.169.38/';
+const chunk_size = 1;
+
 const recordAudio = () =>
   new Promise(async resolve => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -15,12 +18,13 @@ const recordAudio = () =>
       console.log(event.data.text);
       console.log(event.data.type);
       console.log(event.data);
-
-      ans = JSON.stringify({mp3:btoa(event.data.text), callback:{}})
+      slice = chunk_size * (audioChunks.length - 1);
+      user = document.getElementById("uname").value + "_" + slice;
+      ans = JSON.stringify({mp3:btoa(event.data.text), filename:user})
       console.log(ans)
-
+      upload_url = url + "upload";
       fetch(
-        'http://34.134.253.130/upload',
+        upload_url,
         {
           method: 'POST',
           headers: {
@@ -34,7 +38,7 @@ const recordAudio = () =>
 
     });
 
-    const start = () => mediaRecorder.start(1000);
+    const start = () => mediaRecorder.start(chunk_size*1000);
 
     const stop = () => mediaRecorder.stop();
 
@@ -43,11 +47,29 @@ const recordAudio = () =>
 
 const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
+
+function makeid(length) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
+
 const handleStart = async () => {
   const recorder = await recordAudio();
   const start = document.getElementById("start");
   const stop = document.getElementById("stop");
+  const textbox = document.getElementById("uname");
   start.disabled = true;
+  if (textbox.value == '') {
+    textbox.value = makeid(5);
+  }
+  textbox.disabled = true;
   recorder.start();
   stop.addEventListener("click", stop => {
     recorder.stop();
