@@ -81,7 +81,7 @@ def upload():
     with open("temp.webm", "wb") as f:
         f.write(mp3_bytes)
     convert_webm_to_wav("temp.webm", "temp.wav")
-    with open("temp.wav", "rb"):
+    with open("temp.wav", "rb") as f:
         mp3_bytes = f.read()
 
     mp3_data = io.BytesIO(mp3_bytes)

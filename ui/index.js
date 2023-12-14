@@ -1,61 +1,64 @@
+
 function bytesToBase64(bytes) {
   const binString = String.fromCodePoint(...bytes);
   return btoa(binString);
 }
 
-const url = 'http://34.132.128.184/';
+const url = 'http://104.197.35.240/';
 const chunk_size = 20;
-slice = 0;
-audioChunks = [];
+let slice = 0;
+let audioChunks = [];
+let recordingInterval;
 
-const recordAudio = () => new Promise(async resolve => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const mediaRecorder = new MediaRecorder(stream);
+const recordAudio = () =>
+  new Promise(async (resolve) => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
 
-  mediaRecorder.addEventListener("dataavailable", event => {
-    console.log("New event!!!");
-    audioChunks.push(event.data);
+    mediaRecorder.addEventListener('dataavailable', (event) => {
+      console.log('New event!!!');
+      audioChunks.push(event.data);
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
 
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64data = reader.result.split(',')[1];
+        const user = document.getElementById('uname').value + '_' + slice;
+        const ans = JSON.stringify({ mp3: base64data, filename: user });
+        console.log(user);
 
-    reader.onloadend = () => {
-      base64data = reader.result.split(',')[1];
-      user = document.getElementById("uname").value + "_" + slice;
-      const ans = JSON.stringify({ mp3: base64data, filename: user });
-
-      console.log(user);
-      upload_url = url + "upload";
-      fetch(
-        upload_url,
-        {
+        const upload_url = url + 'upload';
+        await fetch(upload_url, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: ans
-        }
-      ).then(response => {
-        console.log(response);
-        slice += 1; // Increment slice for the next chunk
-        audioChunks = [];
+          body: ans,
+        });
 
-        // Restart recording for the next chunk
-        // startRecording();
-      });
-    }
-  
+        slice += chunk_size;
+        audioChunks = [];
+      };
+    });
+
+    const start = () => {
+      mediaRecorder.start(chunk_size * 1000);
+      recordingInterval = setInterval(() => {
+        mediaRecorder.stop();
+        mediaRecorder.start(chunk_size * 1000);
+      }, chunk_size * 1000);
+    };
+
+    const stop = () => {
+      mediaRecorder.stop();
+      clearInterval(recordingInterval);
+    };
+
+    resolve({ start, stop });
   });
 
-  const startRecording = () => mediaRecorder.start(chunk_size * 1000);
-
-  const stopRecording = () => mediaRecorder.stop();
-
-  resolve({ start: startRecording, stop: stopRecording });
-});
-
-const sleep = time => new Promise(resolve => setTimeout(resolve, time));
+const sleep = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
 function makeid(length) {
   let result = '';
@@ -71,23 +74,21 @@ function makeid(length) {
 
 const handleStart = async () => {
   const recorder = await recordAudio();
-  const start = document.getElementById("start");
-  const stop = document.getElementById("stop");
-  const textbox = document.getElementById("uname");
-  start.disabled = true;
-  if (textbox.value == '') {
+  const startButton = document.getElementById('start');
+  const stopButton = document.getElementById('stop');
+  const textbox = document.getElementById('uname');
+  startButton.disabled = true;
+
+  if (textbox.value === '') {
     textbox.value = makeid(5);
   }
   textbox.disabled = true;
 
-  const startRecording = () => {
-    recorder.start();
-  };
+  recorder.start();
 
-  startRecording();
-
-  stop.addEventListener("click", stop => {
+  stopButton.addEventListener('click', () => {
     recorder.stop();
-    start.disabled=false;
+    startButton.disabled = false;
   });
 };
+
