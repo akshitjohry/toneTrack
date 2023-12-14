@@ -190,24 +190,74 @@ def get_track():
     MINIO_CLIENT.fget_object(file_id, component, component)
     return send_file(component,as_attachment=True)
 
-@app.route('/api/data', methods=['GET'])
+@app.route('/visualization', methods=['GET'])
 def visualize_data():
-    while True:
+    # print("Check1")
+    # current_files = MINIO_CLIENT.list_objects(VIS_BUCKETNAME)
+    # print("Files", current_files)
+    # while True:
+    #     print("Check2")
+    #     message = r.blpop(VIS_QUEUE, timeout=0)
+    #     print(message)
+    #     if message:
+    #         message_data = json.loads(message[1].decode('utf-8'))
+    #         filename = message_data["hash"]
+    #         response = MINIO_CLIENT.get_object(VIS_BUCKETNAME, filename)
+    #         object_content = response.read().decode('utf-8')
+    #         vis_data = json.loads(object_content)
+    #         print(vis_data)
+    #         vis_data["filename"] = filename
+    #         response_pickled = jsonpickle.encode(vis_data)
+    #         break
+    #     else:
+    #         time.sleep(1)
+    # return Response(response=response_pickled, status=200, mimetype="application/json")
+    if r.llen(VIS_QUEUE)>0:
+        # vis_data = {
+        #     "1":
+        #     {
+        #         "start_times": [0, 16, 25], 
+        #         "end_times": [1, 19, 27], 
+        #         "emotion": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0]
+        #     },
+        #     "2":
+        #     {
+        #         "start_times": [1, 21], 
+        #         "end_times": [16, 24], 
+        #         "emotion": [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0]
+        #     }
+        # }
+        # vis_data["filename"] = "check"
         message = r.blpop(VIS_QUEUE, timeout=0)
-        print(message)
-        if message:
-            message_data = json.loads(message[1].decode('utf-8'))
-            filename = message_data["hash"]
+        message_data = json.loads(message[1].decode('utf-8'))
+        filename = message_data["hash"]
+        try:
+            # Check if the object exists in MinIO
+            # MINIO_CLIENT.stat_object(VIS_BUCKETNAME, filename)
+            
+            # If the object exists, proceed with fetching and processing
             response = MINIO_CLIENT.get_object(VIS_BUCKETNAME, filename)
             object_content = response.read().decode('utf-8')
             vis_data = json.loads(object_content)
-            print(vis_data)
             vis_data["filename"] = filename
             response_pickled = jsonpickle.encode(vis_data)
-            break
-        else:
-            time.sleep(5)
-    return Response(response=response_pickled, status=200, mimetype="application/json")
+            return Response(response=response_pickled, status=200, mimetype="application/json")
+
+        except Exception as e:
+            # Handle the case where the object does not exist
+            r.lpush(VIS_QUEUE, message_data)
+            error_response = {"error": str(e)}
+            response_pickled = jsonpickle.encode(error_response)
+            return Response(response=response_pickled, status=404, mimetype="application/json")
+        
+    else:
+        vis_data = {
+            "error":"No Visualizations outputs yet"
+        }
+        response_pickled = jsonpickle.encode(vis_data)
+        return Response(response=response_pickled, status=500, mimetype="application/json")
+
+
     
         
         

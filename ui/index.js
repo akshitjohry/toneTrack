@@ -4,7 +4,7 @@ function bytesToBase64(bytes) {
   return btoa(binString);
 }
 
-const url = 'http://34.133.48.163/';
+const url = 'http://34.133.166.127/';
 const chunk_size = 30;
 let slice = 0;
 let audioChunks = [];

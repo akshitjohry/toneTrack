@@ -21,13 +21,32 @@
 // }
 
 function fetchDataFromBackend() {
-    fetch('http://34.133.48.163/api/data') // Replace with the actual URL of your Python backend endpoint
-        .then(response => response.json())
-        .then(jsonData => {
-            // Process the fetched data
-            plotData(jsonData);
+    fetch('http://34.133.166.127/visualization') // Replace with the actual URL of your Python backend endpoint
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
         })
-        .catch(error => console.error('Error fetching data:', error));
+        .then(jsonData => {
+            // Assuming the backend response follows the structure mentioned in the backend code
+            // The 'plotData' function should be defined to handle the processed data
+            handleVisualizationResponse(jsonData);
+            // plotData(jsonData);
+        })
+        .catch(error => console.error('Error fetching or processing data:', error.message));
+}
+
+function handleVisualizationResponse(visData) {
+    // Check for the presence of the 'error' property in the response
+    if ('error' in visData) {
+        // Handle the case where an error occurred on the server
+        console.error('Server error:', visData.error);
+    } else {
+        // Assuming the 'plotData' function is defined to handle the visualization data
+        console.log(visData);
+        plotData(visData);
+    }
 }
 
 // Chart Configuration
@@ -63,6 +82,7 @@ borderColors = [
 
 function plotData(parsedData) {
     const segmentKeys = Object.keys(parsedData);
+    console.log(segmentKeys)
     // Ensure there are always two speakers
     const speaker1 = segmentKeys.includes('1') ? '1' : '0';
     const speaker2 = segmentKeys.includes('2') ? '2' : '0';
@@ -76,14 +96,15 @@ function plotData(parsedData) {
         parsedData[speaker1] ? parsedData[speaker1].emotion : Array.from({ length: Object.values(parsedData)[0].emotion.length }).fill(0),
         parsedData[speaker2] ? parsedData[speaker2].emotion : Array.from({ length: Object.values(parsedData)[0].emotion.length }).fill(0),
     ];
+    console.log(chartData);
     // const fileInput = document.getElementById('fileInput');
     // const fileName = fileInput.value.split('\\').pop().split('/').pop();
     const fileName = parsedData['filename'];
     // const checkIndex = fileName.indexOf('check');
     const checkNumber = parseInt(fileName.substring( 5));
-
+    console.log(checkNumber);
     const chartLabels = Array.from({ length: chartData[0].length }, (_, index) => (index + checkNumber).toString());
-
+    console.log(chartLabels);
     const chartDatasets = [
         {
             label: `Speaker ${speaker1}`,
