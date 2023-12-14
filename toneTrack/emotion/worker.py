@@ -88,7 +88,7 @@ def process_message(message):
             speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('_')[0]))
         else:
             speaker_id = str(int(temp[1].split('_end_')[1].split('_speaker')[1].split('.')[0]))
-        vis_file = temp[0].split('_')[0]+".json"
+        vis_file = temp[0].split('_')[0]+"_diarization.json"
         print("Visualization file", vis_file, start_time, end_time)
         
         response = client.get_object(output_bucketname, vis_file)
@@ -106,6 +106,7 @@ def process_message(message):
             }
             message_json = json.dumps(response_data)
             redis_db.lpush(redis_vis_queue, message_json)
+            vis_file = vis_file.split('_')[0]+'.json'
             client.put_object(vis_bucketname, vis_file, io.BytesIO(json_data), len(json_data), content_type='application/json')
 
         # client.remove_object(emotion_bucketname, f'{filename}.wav')

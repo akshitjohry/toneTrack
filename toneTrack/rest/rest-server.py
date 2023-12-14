@@ -11,6 +11,7 @@ from minio import Minio
 import glob
 import uuid
 import json
+import subprocess
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -24,8 +25,12 @@ r = redis.StrictRedis(host=redisHost, port=redisPort, db=0)
 
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.DEBUG)
-REDIS_KEY = "toWorkers"
-BUCKET_NAME = "working"
+REDIS_KEY = "toDiarization"
+# BUCKET_NAME = "working"
+INPUT_BUCKETNAME='input'
+EMOTION_BUCKETNAME = 'emotion'
+OUTPUT_BUCKETNAME = 'output'
+VIS_BUCKETNAME = 'visualization'
 # ACCESS_KEY = "rootuser"
 # SECRET_KEY = "rootpass123"
 # MINIO_CLIENT = Minio("localhost:9000", access_key=ACCESS_KEY, secret_key=SECRET_KEY, secure=False)
@@ -40,7 +45,6 @@ try:
 except Exception as exp:
     print(f"Exception raised in worker loop: {str(exp)}")
 
-import subprocess
 
 def convert_webm_to_wav(input_file, output_file):
     command = [
@@ -63,6 +67,33 @@ def convert_webm_to_wav(input_file, output_file):
 # convert_webm_to_wav('MgV9c_0.webm', 'output.wav')
 
 
+found = MINIO_CLIENT.bucket_exists(INPUT_BUCKETNAME)
+if not found:
+    MINIO_CLIENT.make_bucket(INPUT_BUCKETNAME)
+else:
+    print("Bucket already exists")
+
+
+found = MINIO_CLIENT.bucket_exists(EMOTION_BUCKETNAME)
+if not found:
+    MINIO_CLIENT.make_bucket(EMOTION_BUCKETNAME)
+else:
+    print("Bucket already exists")
+
+
+found = MINIO_CLIENT.bucket_exists(OUTPUT_BUCKETNAME)
+if not found:
+    MINIO_CLIENT.make_bucket(OUTPUT_BUCKETNAME)
+else:
+    print("Bucket already exists")
+
+
+found = MINIO_CLIENT.bucket_exists(VIS_BUCKETNAME)
+if not found:
+    MINIO_CLIENT.make_bucket(VIS_BUCKETNAME)
+else:
+    print("Bucket already exists")
+
 @app.route('/upload', methods=['POST'])
 def upload():
     # data = request.get_json()
@@ -83,34 +114,29 @@ def upload():
     convert_webm_to_wav("temp.webm", "temp.wav")
     with open("temp.wav", "rb") as f:
         mp3_bytes = f.read()
-
+    os.remove("temp.wav")
+    os.remove("temp.webm")
     mp3_data = io.BytesIO(mp3_bytes)
     mp3_length = len(mp3_bytes)
     file_name = post_data['filename']
     
-
-    found = MINIO_CLIENT.bucket_exists(BUCKET_NAME)
-    if not found:
-       MINIO_CLIENT.make_bucket(BUCKET_NAME)
-    else:
-       print("Bucket already exists")
        
     print("Creating filename: ", file_name, mp3_length)
     
-    MINIO_CLIENT.put_object(BUCKET_NAME, 
+    MINIO_CLIENT.put_object(INPUT_BUCKETNAME, 
                   file_name+".wav",  
                   data=mp3_data, 
                   length=mp3_length)
     if ".wav" in file_name:
         file_name = file_name.split('.')[0]
-    file_name =  file_name+'.json'
-    check = {
-        'file_name': file_name,
-        'length': mp3_length,
-        'data': post_data
-    }
-    check_pickled = json.dumps(check).encode('utf-8')
-    MINIO_CLIENT.put_object(BUCKET_NAME, f'{file_name}', io.BytesIO(check_pickled), len(check_pickled), content_type='application/json')
+    # file_name =  file_name+'.json'
+    # check = {
+    #     'file_name': file_name,
+    #     'length': mp3_length,
+    #     'data': post_data
+    # }
+    # check_pickled = json.dumps(check).encode('utf-8')
+    # MINIO_CLIENT.put_object(INPUT_BUCKETNAME, f'{file_name}', io.BytesIO(check_pickled), len(check_pickled), content_type='application/json')
         
 
     data = {
@@ -135,17 +161,17 @@ def queue():
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
-@app.route('/list', methods=['GET'])
-def list_objects():
-    current_files = MINIO_CLIENT.list_objects(BUCKET_NAME)
+@app.route('/list/<bucket>', methods=['GET'])
+def list_objects(bucket):
+    current_files = MINIO_CLIENT.list_objects(bucket)
     response = {'list' : current_files}
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
 @app.route('/download/<track>', methods=['GET'])
 def download_objects(track):
-    current_files = MINIO_CLIENT.list_objects(BUCKET_NAME)
-    obj_data = MINIO_CLIENT.get_object(BUCKET_NAME, track)
+    current_files = MINIO_CLIENT.list_objects(INPUT_BUCKETNAME)
+    obj_data = MINIO_CLIENT.get_object(INPUT_BUCKETNAME, track)
     data = obj_data.read()
     print("Len", len(data))
     return send_file(io.BytesIO(data), as_attachment=True, download_name=track, mimetype='audio/wav')    

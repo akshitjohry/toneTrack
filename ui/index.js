@@ -5,7 +5,7 @@ function bytesToBase64(bytes) {
 }
 
 const url = 'http://104.197.35.240/';
-const chunk_size = 20;
+const chunk_size = 30;
 let slice = 0;
 let audioChunks = [];
 let recordingInterval;
@@ -24,7 +24,7 @@ const recordAudio = () =>
 
       reader.onloadend = async () => {
         const base64data = reader.result.split(',')[1];
-        const user = document.getElementById('uname').value + '_' + slice;
+        const user = document.getElementById('uname').value + slice;
         const ans = JSON.stringify({ mp3: base64data, filename: user });
         console.log(user);
 
@@ -62,7 +62,7 @@ const sleep = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
 function makeid(length) {
   let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   const charactersLength = characters.length;
   let counter = 0;
   while (counter < length) {

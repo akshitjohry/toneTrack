@@ -58,7 +58,7 @@ def process_message(message):
         with open(out_filename, "r") as output:
             data = json.load(output)
         json_data = json.dumps(data).encode('utf-8')
-        client.put_object(output_bucketname, f'{filename}_diarization.json', io.BytesIO(json_data), len(json_data), content_type='application/json')
+        client.put_object(output_bucketname, f'{filename}.json', io.BytesIO(json_data), len(json_data), content_type='application/json')
         vis_data = {
             "data":[]
         }
