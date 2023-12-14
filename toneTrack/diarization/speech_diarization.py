@@ -75,7 +75,7 @@ def process_file(speech_data):
             speaker_info[speakers[speaker_tag]] = {
                 "start_times": [],
                 "end_times": [],
-                "words": []
+                # "words": []
             }
             
         # start_time = word_info.start_time.seconds*1000000+word_info.start_time.microseconds
@@ -83,7 +83,7 @@ def process_file(speech_data):
         start_time = word_info.start_time.seconds*TIME_FACTOR
         end_time = word_info.end_time.seconds*TIME_FACTOR
 
-        speaker_info[speakers[speaker_tag]]["words"].append(word_info.word)  
+        # speaker_info[speakers[speaker_tag]]["words"].append(word_info.word)  
 
         if speakers[speaker_tag] == previous_speaker:
             speaker_info[speakers[speaker_tag]]["end_times"][-1] = end_time    
@@ -123,11 +123,11 @@ if __name__ == '__main__':
 
 
     if not os.path.exists(prev_speech_file):
-        # rate, data = wavfile.read(speech_file)
+        rate, data = wavfile.read(speech_file)
 
-        with wave.open(speech_file, 'rb') as wave_file:
-            rate = wave_file.getframerate()
-            data = wave_file.readframes(wave_file.getnframes())
+        # with wave.open(speech_file, 'rb') as wave_file:
+        #     rate = wave_file.getframerate()
+        #     data = wave_file.readframes(wave_file.getnframes())
 
         if rate != 8000:
             resampling_factor = rate / 8000
@@ -154,10 +154,10 @@ if __name__ == '__main__':
         
     else:
         # Load previous speaker info
-        # prev_rate, prev_data = wavfile.read(prev_speech_file)
-        with wave.open(prev_speech_file, 'rb') as wave_file:
-            prev_rate = wave_file.getframerate()
-            prev_data = wave_file.readframes(wave_file.getnframes())
+        prev_rate, prev_data = wavfile.read(prev_speech_file)
+        # with wave.open(prev_speech_file, 'rb') as wave_file:
+        #     prev_rate = wave_file.getframerate()
+        #     prev_data = wave_file.readframes(wave_file.getnframes())
 
         if prev_rate != 8000:
             resampling_factor = prev_rate / 8000
@@ -171,10 +171,10 @@ if __name__ == '__main__':
         prev_speaker_info = json.load(f)
 
         #Load current file
-        # rate, data = wavfile.read(speech_file)
-        with wave.open(speech_file, 'rb') as wave_file:
-            rate = wave_file.getframerate()
-            data = wave_file.readframes(wave_file.getnframes())
+        rate, data = wavfile.read(speech_file)
+        # with wave.open(speech_file, 'rb') as wave_file:
+        #     rate = wave_file.getframerate()
+        #     data = wave_file.readframes(wave_file.getnframes())
 
         if rate != 8000:
             resampling_factor = rate / 8000
@@ -217,7 +217,7 @@ if __name__ == '__main__':
         for s in speaker_info:
             start_times = speaker_info[s]["start_times"] 
             end_times = speaker_info[s]["end_times"]
-            words = speaker_info[s]["words"]
+            # words = speaker_info[s]["words"]
             speaker_info[s]["start_times"] = []
             speaker_info[s]["end_times"] = []
             for t in range(len(end_times)):
@@ -227,7 +227,7 @@ if __name__ == '__main__':
                         start = 0
                     speaker_info[s]["start_times"].append(start)
                     speaker_info[s]["end_times"].append(end_times[t]-prev_time)
-                    speaker_info[s]["words"].append(words[t])
+                    # speaker_info[s]["words"].append(words[t])
             if lastEndTime < speaker_info[s]["end_times"][-1]:
                 lastEndTime = speaker_info[s]["end_times"][-1]
                 lastSpeaker = s

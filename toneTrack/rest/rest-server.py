@@ -12,6 +12,7 @@ import glob
 import uuid
 import json
 import subprocess
+import time
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -26,6 +27,7 @@ r = redis.StrictRedis(host=redisHost, port=redisPort, db=0)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.DEBUG)
 REDIS_KEY = "toDiarization"
+VIS_QUEUE = "toVisualize"
 # BUCKET_NAME = "working"
 INPUT_BUCKETNAME='input'
 EMOTION_BUCKETNAME = 'emotion'
@@ -168,10 +170,10 @@ def list_objects(bucket):
     response_pickled = jsonpickle.encode(response)
     return Response(response=response_pickled, status=200, mimetype="application/json")
 
-@app.route('/download/<track>', methods=['GET'])
-def download_objects(track):
-    current_files = MINIO_CLIENT.list_objects(INPUT_BUCKETNAME)
-    obj_data = MINIO_CLIENT.get_object(INPUT_BUCKETNAME, track)
+@app.route('/download/<bucket>/<track>', methods=['GET'])
+def download_objects(bucket, track):
+    current_files = MINIO_CLIENT.list_objects(bucket)
+    obj_data = MINIO_CLIENT.get_object(bucket, track)
     data = obj_data.read()
     print("Len", len(data))
     return send_file(io.BytesIO(data), as_attachment=True, download_name=track, mimetype='audio/wav')    
@@ -187,6 +189,28 @@ def get_track():
     component = args['component'] + ".mp3"
     MINIO_CLIENT.fget_object(file_id, component, component)
     return send_file(component,as_attachment=True)
+
+@app.route('/api/data', methods=['GET'])
+def visualize_data():
+    while True:
+        message = r.blpop(VIS_QUEUE, timeout=0)
+        print(message)
+        if message:
+            message_data = json.loads(message[1].decode('utf-8'))
+            filename = message_data["hash"]
+            response = MINIO_CLIENT.get_object(VIS_BUCKETNAME, filename)
+            object_content = response.read().decode('utf-8')
+            vis_data = json.loads(object_content)
+            print(vis_data)
+            vis_data["filename"] = filename
+            response_pickled = jsonpickle.encode(vis_data)
+            break
+        else:
+            time.sleep(5)
+    return Response(response=response_pickled, status=200, mimetype="application/json")
+    
+        
+        
 
 #Health Check endpoint
 @app.route('/', methods=['GET'])

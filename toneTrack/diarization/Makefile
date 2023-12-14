@@ -1,4 +1,4 @@
-VERSION=v14
+VERSION=v19
 DOCKERUSER=ajmo2266
 
 build:
