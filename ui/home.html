@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Record Audio Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minio Data Plotter</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <!-- <script src="https://github.com/minio/minio-js/releases/download/v7.0.2/minio.browser.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <h1>ToneTrack</h1>
+    Enter your custom recording name:
+    <input type="text" id="uname" name="name" placeholder="random string if empty"/>
+    <p>Start the recording to see the analysis</p>
+    <script src="home.js"></script>
+    <button id="start" onclick="handleStart()">Start recording...</button>
+    <button id="stop">Stop recording...</button>
+
+    <p>Visualizations</p>
+    <canvas id="myChart" width="1" height="1"></canvas>
+
+    <script src="visualise.js"></script>
+
+  </body>
+</html>

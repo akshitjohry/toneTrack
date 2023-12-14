@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: demucs
+  labels:
+    app: demucs
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 4000
+      targetPort: 4000
+  selector:
+    app: demucs

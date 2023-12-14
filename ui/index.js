@@ -3,24 +3,32 @@ function bytesToBase64(bytes) {
   return btoa(binString);
 }
 
-const recordAudio = () =>
-  new Promise(async resolve => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
-    const audioChunks = [];
+const url = 'http://34.132.128.184/';
+const chunk_size = 20;
+slice = 0;
+audioChunks = [];
 
-    mediaRecorder.addEventListener("dataavailable", event => {
-      console.log("New event!!!");
-      audioChunks.push(event.data);
-      console.log(event.data.text);
-      console.log(event.data.type);
-      console.log(event.data);
+const recordAudio = () => new Promise(async resolve => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const mediaRecorder = new MediaRecorder(stream);
 
-      ans = JSON.stringify({mp3:btoa(event.data.text), callback:{}})
-      console.log(ans)
+  mediaRecorder.addEventListener("dataavailable", event => {
+    console.log("New event!!!");
+    audioChunks.push(event.data);
 
+    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+
+    reader.onloadend = () => {
+      base64data = reader.result.split(',')[1];
+      user = document.getElementById("uname").value + "_" + slice;
+      const ans = JSON.stringify({ mp3: base64data, filename: user });
+
+      console.log(user);
+      upload_url = url + "upload";
       fetch(
-        'http://34.134.253.130/upload',
+        upload_url,
         {
           method: 'POST',
           headers: {
@@ -30,28 +38,56 @@ const recordAudio = () =>
         }
       ).then(response => {
         console.log(response);
+        slice += 1; // Increment slice for the next chunk
+        audioChunks = [];
+
+        // Restart recording for the next chunk
+        // startRecording();
       });
-
-    });
-
-    const start = () => mediaRecorder.start(1000);
-
-    const stop = () => mediaRecorder.stop();
-
-    resolve({ start, stop });
+    }
+  
   });
 
+  const startRecording = () => mediaRecorder.start(chunk_size * 1000);
+
+  const stopRecording = () => mediaRecorder.stop();
+
+  resolve({ start: startRecording, stop: stopRecording });
+});
+
 const sleep = time => new Promise(resolve => setTimeout(resolve, time));
+
+function makeid(length) {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+}
 
 const handleStart = async () => {
   const recorder = await recordAudio();
   const start = document.getElementById("start");
   const stop = document.getElementById("stop");
+  const textbox = document.getElementById("uname");
   start.disabled = true;
-  recorder.start();
+  if (textbox.value == '') {
+    textbox.value = makeid(5);
+  }
+  textbox.disabled = true;
+
+  const startRecording = () => {
+    recorder.start();
+  };
+
+  startRecording();
+
   stop.addEventListener("click", stop => {
     recorder.stop();
     start.disabled=false;
   });
 };
-
